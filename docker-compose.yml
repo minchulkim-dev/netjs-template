@@ -1,0 +1,34 @@
+# Use root/example as user/password credentials
+version: '3.9'
+
+services:
+  mongo:
+    image: mongo
+    restart: always
+    container_name: testar-mongo-container
+    ports:
+      - 27018:27017
+    volumes:
+      - ./data/mongodb:/data/db
+    environment:
+      MONGO_INITDB_DATABASE: 'test'
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: example
+
+  # redis
+  redis:
+    image: redis:latest
+    container_name: testar-redis
+    ports:
+      - 6379:6379
+
+  # to view redis data
+  redis-commander:
+    container_name: testar-redis-commander
+    hostname: redis-commander
+    image: rediscommander/redis-commander:latest
+    restart: always
+    environment:
+      - REDIS_HOSTS=local:redis:6379
+    ports:
+      - '8081:8081'
