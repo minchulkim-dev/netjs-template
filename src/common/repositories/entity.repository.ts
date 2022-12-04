@@ -5,6 +5,7 @@ import {
   FilterQuery,
   Model,
   MongooseBulkWriteOptions,
+  Query,
   QueryOptions,
 } from 'mongoose';
 
@@ -16,7 +17,7 @@ export abstract class EntityRepository<T extends Document> {
     projection?: Record<string, unknown>,
     options?: QueryOptions,
     callback?: Callback,
-  ) {
+  ): Query<T | null, T> {
     return this.entityModel.findOne(
       entityFilterQuery,
       {

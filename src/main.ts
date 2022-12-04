@@ -2,7 +2,8 @@ import { ValidationPipe } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, OpenAPIObject, SwaggerModule } from '@nestjs/swagger';
-import { AppModule } from './apis/app';
+import { AppModule } from './app/app.module';
+import { MongoExceptionFilter } from './common/exceptions/mongo.exception';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -13,6 +14,10 @@ async function bootstrap() {
       transform: true,
     }),
   );
+
+  app.useGlobalFilters(new MongoExceptionFilter());
+
+  app.setGlobalPrefix('/v1');
 
   const configService = app.get(ConfigService);
   const { port, env } = configService.get('app');
