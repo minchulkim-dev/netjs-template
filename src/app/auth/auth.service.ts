@@ -6,6 +6,7 @@ import { LoginDto, RegisterDto, TokensDto } from './dtos/auth.dto';
 import * as bcrypt from 'bcrypt';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
+import * as dayjs from 'dayjs';
 
 @Injectable()
 export class AuthService {
@@ -26,16 +27,23 @@ export class AuthService {
 
     const hashedPassword = await this.hashPassword(password);
 
+    // create user
     const user = await this.usersRepository.create({
       email,
       password: hashedPassword,
       name,
     });
 
-    console.log(user);
-
+    // generate access token and refresh token
     const accessToken = await this.generateAccessToken(user);
     const refreshToken = await this.generateRefreshToken(user);
+
+    // save refreshToken to database
+    await this.refreshTokensRepository.create({
+      user: user._id,
+      token: refreshToken,
+      expiresAt: dayjs().add(7, 'day').toDate(),
+    });
 
     return { accessToken, refreshToken };
   }
@@ -58,6 +66,13 @@ export class AuthService {
     // generate access token and refresh token
     const accessToken = await this.generateAccessToken(user);
     const refreshToken = await this.generateRefreshToken(user);
+
+    // save refreshToken to database
+    await this.refreshTokensRepository.create({
+      user: user._id,
+      token: refreshToken,
+      expiresAt: dayjs().add(7, 'day').toDate(),
+    });
 
     return { accessToken, refreshToken };
   }
@@ -95,4 +110,6 @@ export class AuthService {
       },
     );
   }
+
+  // todo refresh tokens
 }
