@@ -2,7 +2,12 @@ import { RefreshTokensRepository } from './../refresh-tokens/refresh-tokens.repo
 import { UserDocument } from '../users/schema/user.schema';
 import { UsersRepository } from '../users/users.repository';
 import { Injectable, UnauthorizedException } from '@nestjs/common';
-import { LoginDto, RegisterDto, TokensDto } from './dtos/auth.dto';
+import {
+  LoginDto,
+  RefreshTokensDto,
+  RegisterDto,
+  TokensDto,
+} from './dtos/auth.dto';
 import * as bcrypt from 'bcrypt';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
@@ -77,6 +82,31 @@ export class AuthService {
     return { accessToken, refreshToken };
   }
 
+  async refresh(refreshTokensDto: RefreshTokensDto): Promise<TokensDto> {
+    const { refreshToken: oldRefreshToken } = refreshTokensDto;
+    // verify refresh token
+    const { sub: userId } = await this.jwtService.verifyAsync(oldRefreshToken, {
+      secret: this.configService.get<string>('jwt.refreshTokenSecretKey'),
+    });
+
+    // find user and throw error if not found
+    const user = await this.usersRepository.findOne({ _id: userId });
+
+    const accessToken = await this.generateAccessToken(user);
+    const refreshToken = await this.generateRefreshToken(user);
+
+    await this.refreshTokensRepository.findOneAndUpdate(
+      { user: user._id, token: oldRefreshToken },
+      {
+        user: user._id,
+        token: refreshToken,
+        expiresAt: dayjs().add(7, 'day').toDate(),
+      },
+    );
+
+    return { accessToken, refreshToken };
+  }
+
   // hashPassword method
   private async hashPassword(password: string): Promise<string> {
     const saltOrRounds = await bcrypt.genSalt();
@@ -110,6 +140,4 @@ export class AuthService {
       },
     );
   }
-
-  // todo refresh tokens
 }

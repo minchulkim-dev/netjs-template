@@ -29,3 +29,8 @@ export class TokensDto {
   accessToken: string;
   refreshToken: string;
 }
+
+export class RefreshTokensDto {
+  @IsString()
+  refreshToken: string;
+}
